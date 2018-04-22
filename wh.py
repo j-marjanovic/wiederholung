@@ -51,11 +51,11 @@ class WhItem(object):
         return False
 
     def get_s_t_ratio(self):
-        """ Get success/tries ratio, returns 0 for untried items """
+        """ Get success/tries ratio, returns None for untried items """
         try:
             return self.nr_successes / self.nr_tries
         except ZeroDivisionError:
-            return 0
+            return None
 
 class Wh(object):
     """ Repetition game: provide filename to ctor and call play() """
@@ -82,7 +82,7 @@ class Wh(object):
 
             Weight function returns values on interval [1, 10], and 2nd power is used to penalize
             the wrong answers more """
-        wfun = lambda it: int(9 * (1 - it.get_s_t_ratio()**2)) + 1
+        wfun = lambda it: int(9 * (1 - (it.get_s_t_ratio() or 0)**2)) + 1
 
         ws = list(map(wfun, self.ls))
         ws_sum = sum(ws)
@@ -97,9 +97,21 @@ class Wh(object):
         # this is never reached, just to make linter happy
         return self.ls[0]
 
+    @staticmethod
+    def _ratio_to_color(percent):
+        if percent is None:
+            return CLIColors.ENDC
+        elif percent < 0.7:
+            return CLIColors.RED
+        elif percent < 0.9:
+            return CLIColors.YELLOW
+
+        return CLIColors.GREEN
+
     def _print_stats(self):
         FMT_HDR = "{0} {1:15} > {2:15}| {3:3} / {4:3} ({5})" + CLIColors.ENDC
         FMT_ITM = "{0} {1:15} > {2:15}| {3:3} / {4:3} ({5:.1f}%)" + CLIColors.ENDC
+        FMT_TOT = "{0} {1:15}   {2:15}| {3:3} / {4:3} ({5:.1f}%)" + CLIColors.ENDC
         hdr_line = FMT_HDR.format("\n", "question", "answer", " ok", "tot", "success")
 
         print("\n")
@@ -107,17 +119,25 @@ class Wh(object):
         print(hdr_line)
         print("-"*len(hdr_line))
 
+        total_successes = 0
+        total_tries = 0
         for it in sorted(self.ls, key=lambda x: x.que):
-            percent = it.get_s_t_ratio() * 100
-            if it.nr_tries == 0:
-                color = CLIColors.ENDC
-            elif percent < 70:
-                color = CLIColors.RED
-            elif percent < 90:
-                color = CLIColors.YELLOW
-            else:
-                color = CLIColors.GREEN
+            ratio = it.get_s_t_ratio()
+            percent = (ratio or 0) * 100
+            color = self._ratio_to_color(ratio)
+            total_successes += it.nr_successes
+            total_tries += it.nr_tries
             print(FMT_ITM.format(color, it.que, it.ans, it.nr_successes, it.nr_tries, percent))
+
+        try:
+            total_percent = total_successes / total_tries * 100
+        except ZeroDivisionError:
+            total_percent = 0
+
+        color_total = self._ratio_to_color(None if total_tries == 0 else total_percent / 100)
+        print("-"*len(hdr_line))
+        print(FMT_TOT.format(color_total, "TOTAL", "", total_successes, total_tries, total_percent))
+
 
     def play(self):
         """ Randomly chose elements, ask for answer, compare it to the correct answer, at the
