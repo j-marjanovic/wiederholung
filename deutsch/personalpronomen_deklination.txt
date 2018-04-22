@@ -1,0 +1,19 @@
+# nom (deklination), akk or dat
+(AKK) ich, mich
+(AKK) du, dich
+(AKK) er, ihn
+(AKK) sie, sie
+(AKK) es, es
+(AKK) wir, uns
+(AKK) ihr, euch
+(AKK) sie, sie
+(AKK) Sie, Sie
+(DAT) ich, mir
+(DAT) du, dir
+(DAT) er, ihm
+(DAT) sie-sg, ihr
+(DAT) es, ihm
+(DAT) wir, uns
+(DAT) ihr, euch
+(DAT) sie-pl, ihnen
+(DAT) Sie, Ihnen
