@@ -63,6 +63,7 @@ class Wh(object):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.ls = self._parse_file(filename)
         self.logger.info("loaded %d words", len(self.ls))
+        self.item_to_repeat = None  # store item on failure, ask the same q again until OK
 
     @staticmethod
     def _parse_file(filename):
@@ -147,13 +148,15 @@ class Wh(object):
         """
         try:
             while True:
-                item = self._select_random()
+                item = self.item_to_repeat or self._select_random()
                 ans = input(item.que + " > ")
 
                 if item.check(ans):
                     print(CLIColors.GREEN + 'Genau!' + CLIColors.ENDC)
+                    self.item_to_repeat = None
                 else:
                     falsch_msg = 'Falsch! ({0} -> {1})'.format(item.que, item.ans)
+                    self.item_to_repeat = item
                     print(CLIColors.RED + falsch_msg + CLIColors.ENDC)
         except KeyboardInterrupt:
             self._print_stats()
