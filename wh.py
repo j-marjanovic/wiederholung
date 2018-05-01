@@ -110,9 +110,11 @@ class Wh(object):
         return CLIColors.GREEN
 
     def _print_stats(self):
-        FMT_HDR = "{0} {1:15} > {2:15}| {3:3} / {4:3} ({5})" + CLIColors.ENDC
-        FMT_ITM = "{0} {1:15} > {2:15}| {3:3} / {4:3} ({5:.1f}%)" + CLIColors.ENDC
-        FMT_TOT = "{0} {1:15}   {2:15}| {3:3} / {4:3} ({5:.1f}%)" + CLIColors.ENDC
+        len_q = max([len(xi.que) for xi in self.ls])
+        len_a = max([len(xi.ans) for xi in self.ls])
+        FMT_HDR = "{{0}} {{1:{0}}} > {{2:{1}}} | {{3:3}} / {{4:3}} ({{5}})".format(len_q, len_a) + CLIColors.ENDC
+        FMT_ITM = "{{0}} {{1:{0}}} > {{2:{1}}} | {{3:3}} / {{4:3}} ({{5:.1f}}%)".format(len_q, len_a) + CLIColors.ENDC
+        FMT_TOT = "{{0}} {{1:{0}}}   {{2:{1}}} | {{3:3}} / {{4:3}} ({{5:.1f}}%)".format(len_q, len_a) + CLIColors.ENDC
         hdr_line = FMT_HDR.format("\n", "question", "answer", " ok", "tot", "success")
 
         print("\n")
