@@ -26,15 +26,19 @@ import csv
 import logging
 import random
 
+
 class CLIColors:
     """ Color codes for ANSI/VT100 terminal emulators """
-    GREEN = '\033[92m'
-    ENDC = '\033[0m'
-    RED = '\033[31m'
-    YELLOW = '\033[33m'
+
+    GREEN = "\033[32m"
+    ENDC = "\033[0m"
+    RED = "\033[31m"
+    YELLOW = "\033[33m"
+
 
 class WhItem(object):
     """ Repetition item; stores question, correct answer and number of tries and successes """
+
     def __init__(self, que, ans):
         self.que = que
         self.ans = ans
@@ -57,20 +61,23 @@ class WhItem(object):
         except ZeroDivisionError:
             return None
 
+
 class Wh(object):
     """ Repetition game: provide filename to ctor and call play() """
+
     def __init__(self, filename):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.ls = self._parse_file(filename)
         self.logger.info("loaded %d words", len(self.ls))
-        self.item_to_repeat = None  # store item on failure, ask the same q again until OK
+        # store item on failure, ask the same q again until OK
+        self.item_to_repeat = None
 
     @staticmethod
     def _parse_file(filename):
         """ Parse CSV file and return list of WhItem-s """
         ls = list()
         with open(filename) as f:
-            csvr = csv.reader(filter(lambda row: not row.startswith('#'), f))
+            csvr = csv.reader(filter(lambda row: not row.startswith("#"), f))
             for row in csvr:
                 q = row[0].strip()
                 a = row[1].strip()
@@ -83,7 +90,7 @@ class Wh(object):
 
             Weight function returns values on interval [1, 10], and 2nd power is used to penalize
             the wrong answers more """
-        wfun = lambda it: int(9 * (1 - (it.get_s_t_ratio() or 0)**2)) + 1
+        wfun = lambda it: int(9 * (1 - (it.get_s_t_ratio() or 0) ** 2)) + 1
 
         ws = list(map(wfun, self.ls))
         ws_sum = sum(ws)
@@ -112,15 +119,32 @@ class Wh(object):
     def _print_stats(self):
         len_q = max([len(xi.que) for xi in self.ls])
         len_a = max([len(xi.ans) for xi in self.ls])
-        FMT_HDR = "{{0}} {{1:{0}}} > {{2:{1}}} | {{3:3}} / {{4:3}} ({{5}})".format(len_q, len_a) + CLIColors.ENDC
-        FMT_ITM = "{{0}} {{1:{0}}} > {{2:{1}}} | {{3:3}} / {{4:3}} ({{5:.1f}}%)".format(len_q, len_a) + CLIColors.ENDC
-        FMT_TOT = "{{0}} {{1:{0}}}   {{2:{1}}} | {{3:3}} / {{4:3}} ({{5:.1f}}%)".format(len_q, len_a) + CLIColors.ENDC
+        len_q = max(len_q, len("question"))
+        len_a = max(len_a, len("answer"))
+        FMT_HDR = (
+            "{{0}} {{1:{0}}} > {{2:{1}}} | {{3:3}} / {{4:3}} ({{5}})".format(
+                len_q, len_a
+            )
+            + CLIColors.ENDC
+        )
+        FMT_ITM = (
+            "{{0}} {{1:{0}}} > {{2:{1}}} | {{3:3}} / {{4:3}} ({{5:.1f}}%)".format(
+                len_q, len_a
+            )
+            + CLIColors.ENDC
+        )
+        FMT_TOT = (
+            "{{0}} {{1:{0}}}   {{2:{1}}} | {{3:3}} / {{4:3}} ({{5:.1f}}%)".format(
+                len_q, len_a
+            )
+            + CLIColors.ENDC
+        )
         hdr_line = FMT_HDR.format("\n", "question", "answer", " ok", "tot", "success")
 
         print("\n")
         print("Statistics:")
         print(hdr_line)
-        print("-"*len(hdr_line))
+        print("-" * len(hdr_line))
 
         total_successes = 0
         total_tries = 0
@@ -130,23 +154,32 @@ class Wh(object):
             color = self._ratio_to_color(ratio)
             total_successes += it.nr_successes
             total_tries += it.nr_tries
-            print(FMT_ITM.format(color, it.que, it.ans, it.nr_successes, it.nr_tries, percent))
+            print(
+                FMT_ITM.format(
+                    color, it.que, it.ans, it.nr_successes, it.nr_tries, percent
+                )
+            )
 
         try:
             total_percent = total_successes / total_tries * 100
         except ZeroDivisionError:
             total_percent = 0
 
-        color_total = self._ratio_to_color(None if total_tries == 0 else total_percent / 100)
-        print("-"*len(hdr_line))
-        print(FMT_TOT.format(color_total, "TOTAL", "", total_successes, total_tries, total_percent))
-
+        color_total = self._ratio_to_color(
+            None if total_tries == 0 else total_percent / 100
+        )
+        print("-" * len(hdr_line))
+        print(
+            FMT_TOT.format(
+                color_total, "TOTAL", "", total_successes, total_tries, total_percent
+            )
+        )
 
     def play(self):
         """ Randomly chose elements, ask for answer, compare it to the correct answer, at the
             end print the statistics.
 
-            Exit with Ctrl+C
+            Exit with Ctrl+C or Ctrl+D
         """
         try:
             while True:
@@ -154,26 +187,30 @@ class Wh(object):
                 ans = input(item.que + " > ")
 
                 if item.check(ans):
-                    print(CLIColors.GREEN + 'Genau!' + CLIColors.ENDC)
+                    print(CLIColors.GREEN + "Richtig!" + CLIColors.ENDC)
                     self.item_to_repeat = None
                 else:
-                    falsch_msg = 'Falsch! ({0} -> {1})'.format(item.que, item.ans)
+                    falsch_msg = "Falsch! ({0} -> {1})".format(item.que, item.ans)
                     self.item_to_repeat = item
                     print(CLIColors.RED + falsch_msg + CLIColors.ENDC)
         except KeyboardInterrupt:
             self._print_stats()
+        except EOFError:
+            self._print_stats()
+
 
 def main():
     """ Play Wiederholung game """
-    parser = argparse.ArgumentParser(description='Wi')
+    parser = argparse.ArgumentParser(description="Wi")
     parser.add_argument("txt_file", help="CSV file with words for repetition")
-    parser.add_argument("--debug", action="store_true", help="enable debugging information")
+    parser.add_argument("--debug", action="store_true", help="enable debug information")
     args = parser.parse_args()
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
 
     Wh(args.txt_file).play()
+
 
 if __name__ == "__main__":
     main()
